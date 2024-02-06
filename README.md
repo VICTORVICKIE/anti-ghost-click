@@ -18,7 +18,7 @@ Right-clicking on the system tray icon opens a context menu with the option to e
 
 ### Dependencies
 
-* window.h
+* windows.h
 
 <!-- ### Installing
 

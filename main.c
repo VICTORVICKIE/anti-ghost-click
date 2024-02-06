@@ -12,27 +12,28 @@
 
 HHOOK global_hook;
 NOTIFYICONDATA nid;
-DWORD last_click_ms = 0;
+DWORD last_LMB_up_ms = 0;
+DWORD last_LMB_down_ms = 0;
 HMENU hPopupMenu;
+
+BOOL IsGhostClick(DWORD curr, DWORD prev) {
+    return (curr - prev) <= CLICK_INTERVAL_THRESHOLD_MS;
+}
 
 LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
+        MSLLHOOKSTRUCT *mouseStruct = (MSLLHOOKSTRUCT *)lParam;
+        DWORD curr_click_ms = mouseStruct->time;
         if (wParam == WM_LBUTTONDOWN) {
-            MSLLHOOKSTRUCT *mouseStruct = (MSLLHOOKSTRUCT *)lParam;
-            DWORD curr_click_ms = mouseStruct->time;
-
-            if (last_click_ms) {
-                DWORD click_interval_ms = curr_click_ms - last_click_ms;
-
-                if (click_interval_ms <= CLICK_INTERVAL_THRESHOLD_MS) {
-                    // printf("if %ld\n", click_interval_ms);
-                    return 1; // Skip Click
-                } else {
-                    // printf("else: %ld\n", click_interval_ms);
-                }
+            if (IsGhostClick(curr_click_ms, last_LMB_down_ms)) {
+                return -1;
             }
-
-            last_click_ms = curr_click_ms;
+            last_LMB_down_ms = curr_click_ms;
+        } else if (wParam == WM_LBUTTONUP) {
+            if (IsGhostClick(curr_click_ms, last_LMB_up_ms)) {
+                return -1;
+            }
+            last_LMB_up_ms = curr_click_ms;
         }
     }
 
